@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Satellite Supply Plan</title>
+<meta name="description" content="Decision tool: monthly SKU demand vs. supplier machine capacity, gaps, and actions to close them (fictional case data).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav class="topnav" id="topnav">
+  <a class="brand" href="#top">Satellite <span>Supply Plan</span></a>
+  <div class="navlinks">
+    <a href="#gap">The Gap</a>
+    <a href="#where">Where</a>
+    <a href="#audit">Audit</a>
+    <a href="#actions">Close the Gap</a>
+    <a href="#assumptions">Assumptions</a>
+  </div>
+  <div class="seg sp-seg" role="group" aria-label="Build-ahead (stockpiling)">
+    <button data-sp="off" class="on">No build-ahead</button>
+    <button data-sp="on">Build-ahead</button>
+  </div>
+  <div class="scn-key" aria-label="Scenario color key">
+    <span><i class="sw g"></i>Guaranteed</span>
+    <span><i class="sw p"></i>+ Planned</span>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="top">
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <div class="horizon" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <p class="eyebrow">Satellite supply plan &middot; Jan 1973 &ndash; Dec 1974 &middot; Guaranteed vs. guaranteed + planned supply &middot; <span id="heroMode"></span></p>
+    <h1 id="heroHeadline"></h1>
+    <p class="hero-sub" id="heroSub"></p>
+    <div class="hero-ctas">
+      <a class="btn" href="#gap">See the gap</a>
+      <a class="btn" href="#actions">Close the gap</a>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <p class="statusline" id="statusline"></p>
+  </div>
+</header>
+
+<main>
+<!-- ============ THE GAP ============ -->
+<section class="section" id="gap">
+  <div class="section-head">
+    <p class="eyebrow">01 &middot; Demand vs. supply</p>
+    <h2>When do we run short?</h2>
+    <p class="lede" id="gapLede"></p>
+  </div>
+  <div class="grid-2">
+    <figure class="panel">
+      <figcaption>
+        <h3>Demand vs. machine capacity</h3>
+        <p>Total machine hours per month. Capacity above demand doesn't mean no gap: each SKU can only use its own qualified, compatible machines.</p>
+      </figcaption>
+      <div class="legend" id="legendCap"></div>
+      <div class="chart-box"><canvas id="chartCap" aria-label="Monthly demand vs. capacity, both scenarios"></canvas></div>
+      <details class="numbers"><summary>Show the monthly numbers</summary><div class="table-wrap" id="numCap"></div></details>
+    </figure>
+    <figure class="panel">
+      <figcaption>
+        <h3>Gap hours by month</h3>
+        <p>Machine hours of SKU demand that no eligible machine can cover.</p>
+      </figcaption>
+      <div class="legend" id="legendGap"></div>
+      <div class="chart-box"><canvas id="chartGap" aria-label="Monthly gap hours, both scenarios"></canvas></div>
+      <details class="numbers"><summary>Show the monthly numbers</summary><div class="table-wrap" id="numGap"></div></details>
+    </figure>
+  </div>
+  <figure class="panel">
+    <figcaption>
+      <h3>Satellites short by month</h3>
+      <p>Whole satellites that can't be built from the SKUs delivered, filled in your priority order. A satellite needs every SKU in its BOM.</p>
+    </figcaption>
+    <div class="legend" id="legendSats"></div>
+    <div class="chart-box"><canvas id="chartSats" aria-label="Satellites short by month, both scenarios"></canvas></div>
+      <details class="numbers"><summary>Show the monthly numbers by satellite type</summary><div class="table-wrap" id="numSats"></div></details>
+  </figure>
+</section>
+
+<!-- ============ WHERE ============ -->
+<section class="section" id="where">
+  <div class="section-head">
+    <p class="eyebrow">02 &middot; Breakouts</p>
+    <h2>Where is the gap, and who owns it?</h2>
+    <p class="lede" id="whereLede"></p>
+  </div>
+  <div class="grid-2">
+    <figure class="panel" id="skuPanel">
+      <figcaption><h3>Gap by SKU</h3><p>Total machine hours short, Jan-73 to Dec-74. Click a SKU to audit it.</p></figcaption>
+      <div class="legend legend-scn"></div>
+      <div class="chart-box tall"><canvas id="chartSku" aria-label="Gap hours by SKU, both scenarios"></canvas></div>
+      <details class="numbers"><summary>Show the numbers by SKU</summary><div class="table-wrap" id="numSku"></div></details>
+    </figure>
+    <div class="stack">
+      <figure class="panel">
+        <figcaption><h3>Gap by supplier</h3><p>Sole-source SKUs count toward their supplier. SKUs with more than one qualified supplier count as Shared, like the Excel.</p></figcaption>
+        <div class="legend legend-scn"></div>
+        <div class="chart-box short"><canvas id="chartSupplier" aria-label="Gap hours by supplier, both scenarios"></canvas></div>
+      <details class="numbers"><summary>Show the numbers</summary><div class="table-wrap" id="numSupplier"></div></details>
+      </figure>
+      <figure class="panel">
+        <figcaption><h3>Gap by buyer (owner)</h3><p>The SKU's buyer owns closing its gap. SKUs with more than one buyer count as Shared and need a single named owner.</p></figcaption>
+        <div class="legend legend-scn"></div>
+        <div class="chart-box short"><canvas id="chartBuyer" aria-label="Gap hours by buyer, both scenarios"></canvas></div>
+      <details class="numbers"><summary>Show the numbers</summary><div class="table-wrap" id="numBuyer"></div></details>
+      </figure>
+    </div>
+  </div>
+  <div class="grid-2 uneven">
+    <figure class="panel">
+      <figcaption><h3>Gap by machine type &times; size</h3><p>Machine hours short, grouped by the machine each SKU requires.</p></figcaption>
+      <div id="typeSizeTable" class="ts-pair"></div>
+    </figure>
+    <figure class="panel">
+      <figcaption><h3>Supplier capacity use</h3><p>Hours used vs. available. Low use next to a gap means capacity exists but isn't qualified or compatible.</p></figcaption>
+      <div id="supplierTable" class="table-wrap"></div>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ AUDIT ============ -->
+<section class="section" id="audit">
+  <div class="section-head">
+    <p class="eyebrow">03 &middot; Audit</p>
+    <h2>Every SKU, every month</h2>
+    <p class="lede">Click any cell or SKU row to see where its hours came from in both scenarios. Darker means more.</p>
+  </div>
+  <div class="panel">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="seg scn-seg" id="auditScn" role="group" aria-label="Heatmap scenario">
+          <button data-as="g"><i class="sw g"></i>Guaranteed</button>
+          <button data-as="gp" class="on"><i class="sw p"></i>+ Planned</button>
+        </div>
+        <div class="seg" id="heatMetric" role="group" aria-label="Heatmap metric">
+          <button data-m="gapHrs" class="on">Gap hrs</button>
+          <button data-m="gapUnits">Gap units</button>
+          <button data-m="machinesToAdd">Machine-equivalents</button>
+          <button data-m="demandUnits">Demand units</button>
+          <button data-m="demandHrs">Demand hrs</button>
+          <button data-m="delivered">Delivered hrs</button>
+        </div>
+      </div>
+      <button class="btn small" id="csvBtn">Download CSV</button>
+    </div>
+    <div id="heatmap" class="table-wrap heat"></div>
+  </div>
+  <div class="panel detail" id="detail" hidden></div>
+  <div class="panel">
+    <div class="toolbar">
+      <div class="seg" id="tableTab" role="group" aria-label="Detail tables">
+        <button data-t="sku" class="on">SKUs</button>
+        <button data-t="sats">Satellites</button>
+        <button data-t="adds">Machines to add</button>
+        <button data-t="machines">Machines</button>
+        <button data-t="monthly">Monthly summary</button>
+      </div>
+    </div>
+    <div id="detailTable" class="table-wrap"></div>
+  </div>
+</section>
+
+<!-- ============ ACTIONS ============ -->
+<section class="section" id="actions">
+  <div class="section-head">
+    <p class="eyebrow">04 &middot; Recommendations</p>
+    <h2>Close the gap, in priority order</h2>
+    <p class="lede" id="actionsLede"></p>
+  </div>
+  <div class="actions-summary panel" id="actionsSummary"></div>
+  <ol class="actions" id="actionsList"></ol>
+  <p class="note">Impacts are computed live by the model. Each action is stacked on top of the ones above it and on your current assumptions. Actions are ranked on guaranteed + planned supply, the plan of record. Ticking the build-ahead action turns on the same stockpiling mode as the toggle at the top. Qualification is assumed to take 6 months (start Jan-73, effective Jul-73), before the first Type B gap opens. Tick an action to apply it to the whole site. A negative guaranteed-only figure is a greedy-ordering effect: a new qualification changes which SKUs get scarce hours first. An optimizer wouldn't get worse.</p>
+</section>
+
+<!-- ============ ASSUMPTIONS ============ -->
+<section class="section" id="assumptions">
+  <div class="section-head">
+    <p class="eyebrow">05 &middot; Scenario controls</p>
+    <h2>Change the assumptions</h2>
+    <p class="lede">Every chart, table, and recommendation above recalculates instantly for both scenarios. <button class="linkbtn" id="resetBtn">Reset to the Excel base case</button></p>
+  </div>
+
+  <div class="controls">
+    <div class="panel ctl">
+      <h3>Planned capacity timing</h3>
+      <p>"Yes" machines are guaranteed. Planned machines turn on in their listed month and count only in the <i class="sw p"></i>+ planned scenario. Shift them all to test a slip.</p>
+      <label class="field">Planned machines turn on
+        <span class="range-row"><input type="range" id="slip" min="-6" max="6" step="1" value="0"><output id="slipOut"></output></span>
+      </label>
+    </div>
+
+    <div class="panel ctl">
+      <h3>Build-ahead (stockpiling)</h3>
+      <p>Off is the Excel base case: parts are made in the launch month. On locks in the base case's satellites each month, then uses spare machine hours and stock to build extra satellites, so it can only add satellites. This is the Excel's stockpiling toggle (Dashboard E3). <b>Directional only:</b> the build-ahead mix is a simple heuristic, and much of the stock ends up as parts that don't complete satellites, so it understates what an optimised plan could achieve.</p>
+      <div class="seg big" role="group" aria-label="Build-ahead">
+        <button data-sp="off" class="on">No build-ahead</button>
+        <button data-sp="on">Build-ahead allowed</button>
+      </div>
+    </div>
+
+    <div class="panel ctl">
+      <h3>Satellite priority when short</h3>
+      <p>Satellite types get machine hours, and then parts, in this order. Lower rows are cut first. This changes which satellites are short and can shift the hour gaps slightly.</p>
+      <ol class="prio" id="prioList"></ol>
+    </div>
+
+    <div class="panel ctl">
+      <h3>Assumed SKU data <span class="tag">invented</span></h3>
+      <p>The case left machine type, size, and hours per unit blank for SKUs 7 and 16. The base values copy similar SKUs at the same supplier. Real values would come from the supplier's specs.</p>
+      <div id="skuAssumed"></div>
+    </div>
+
+    <div class="panel ctl">
+      <h3>Demand</h3>
+      <label class="field">Launch plan scale
+        <span class="range-row"><input type="range" id="launchScale" min="70" max="130" step="5" value="100"><output id="launchOut"></output></span>
+      </label>
+      <label class="field">Production yield (good units per unit started)
+        <span class="range-row"><input type="range" id="yield" min="80" max="100" step="1" value="100"><output id="yieldOut"></output></span>
+      </label>
+    </div>
+
+    <div class="panel ctl wide">
+      <h3>Supplier operating hours</h3>
+      <p>One machine's monthly hours = days per month &times; uptime hours per day. Use this to test extra shifts or weekend work.</p>
+      <div id="supplierCtl" class="table-wrap"></div>
+    </div>
+
+    <div class="panel ctl wide">
+      <h3>Qualify a new supplier for a SKU</h3>
+      <p>Qualification takes several months. Pick the month it takes effect. The model then lets that supplier's compatible machines make the SKU.</p>
+      <div class="inline-form" id="qualForm"></div>
+      <ul class="chips" id="qualList"></ul>
+    </div>
+
+    <div class="panel ctl wide">
+      <h3>Add or remove machines</h3>
+      <p>Add capacity at a supplier (counts as planned), or switch off an existing machine to test an outage.</p>
+      <div class="inline-form" id="addMachineForm"></div>
+      <ul class="chips" id="addMachineList"></ul>
+      <div id="machineCtl" class="machine-grid"></div>
+    </div>
+
+    <div class="panel ctl wide">
+      <h3>Fixed model assumptions</h3>
+      <ol class="assume-list" id="assumeList"></ol>
+    </div>
+  </div>
+</section>
+
+<section class="section method">
+  <div class="section-head">
+    <p class="eyebrow">06 &middot; Method</p>
+    <h2>How the numbers are built</h2>
+  </div>
+  <div class="method-grid">
+    <div><h4>1 &middot; Demand</h4><p>Satellites launched per month &times; bill of materials = SKU units, needed in the launch month. Units &times; production hours per unit = machine hours.</p></div>
+    <div><h4>2 &middot; Supply</h4><p>Each machine gives its supplier's days &times; uptime hours per month. Guaranteed counts only "Yes" machines. Guaranteed + planned also counts dated machines from their turn-on month.</p></div>
+    <div><h4>3 &middot; Eligibility</h4><p>A machine can make a SKU only if all three hold: its supplier is qualified for the SKU, its type matches (Type C makes A, B, and C), and its size is at least the SKU's size.</p></div>
+    <div><h4>4 &middot; Allocation (type by type)</h4><p>The same as the Excel. Each month, satellite types go in priority order. A probe pass finds how many whole satellites of that type the free hours support. A commit pass then reserves hours for exactly that many. After all five types, a fill pass gives spare hours to the remaining demand. In every pass, machines go from least to most flexible, and the hardest-to-make SKUs go first.</p></div>
+    <div><h4>5 &middot; Satellites</h4><p>Delivered units become whole satellites in priority order. A satellite is buildable only if every SKU in its BOM is available.</p></div>
+    <div><h4>6 &middot; Build-ahead (optional, directional)</h4><p>After the normal fill, each machine's spare hours build SKUs toward that SKU's future gap, less what's already on hand, in the same order. Each month the base case's satellites are locked in first. Stock and leftover parts then build extra satellites in priority order, so build-ahead never builds fewer satellites. It's a heuristic, so it understates the best achievable.</p></div>
+    <div><h4>Limits</h4><p>The type-by-type fill is fast and transparent but isn't a guaranteed optimum. It favours whole satellites over total hours, so the hour gap can be slightly larger than a pure hours-first fill. A solver could find better results, so treat each shortfall as an upper bound. Without build-ahead no inventory carries between months. Machines are reserved whole.</p></div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <p>Case interview decision tool &middot; built by Mark Whisenant &middot; all data fictional, from the case workbook &middot; Reconciles to the Excel model in both build-ahead modes.</p>
+</footer>
+
+<button class="backbtn" id="backBtn" hidden></button>
+<div class="tooltip" id="tooltip" role="status" hidden></div>
+
+<script src="vendor/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
