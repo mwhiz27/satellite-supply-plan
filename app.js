@@ -451,7 +451,7 @@
     const rows = Rgp.machines.map((m, j) => ({ m, j }))
       .filter(x => {
         const q = s.qual.find(q => q.name === x.m.supplier);
-        return q && (x.m.type === 'Type C' || x.m.type === s.type) && x.m.size >= s.size;
+        return q && q.from <= t && (x.m.type === 'Type C' || x.m.type === s.type) && x.m.size >= s.size;
       });
     const status = m => (!m.planned ? 'Guaranteed' : (m.from > 23 ? 'Planned after Dec-74' : `Planned ${mLabel(months[Math.max(0, m.from)])}`));
     el.innerHTML = `
@@ -551,7 +551,7 @@
   function renderActions() {
     const s0 = recResults.start, s1 = recResults.end, risk = recResults.risk;
     $('#actionsLede').innerHTML = s0.gp.satsShort > 0 || s0.g.satsShort > 0
-      ? `With planned capacity, these three actions take satellites short from <strong>${fmt(s0.gp.satsShort)}</strong> to <strong>${fmt(s1.gp.satsShort)}</strong>. If only guaranteed machines show up, they take it from <strong>${fmt(s0.g.satsShort)}</strong> to <strong>${fmt(s1.g.satsShort)}</strong>. That difference is why action 1 comes first: protect the planned capacity the plan depends on.`
+      ? `With planned capacity, actions 02–04 take satellites short from <strong>${fmt(s0.gp.satsShort)}</strong> to <strong>${fmt(s1.gp.satsShort)}</strong>. If only guaranteed machines show up, they take it from <strong>${fmt(s0.g.satsShort)}</strong> to <strong>${fmt(s1.g.satsShort)}</strong>. That difference is why action 01 comes first: protect the planned capacity the plan depends on.`
       : 'No satellites are short under the current assumptions. The actions below add margin.';
     const box = (label, f, fmtF, sub) => `<div><div class="l">${label}</div>${['g', 'gp'].map(k => `<div class="row">${sw(k)}<span class="v">${fmtF(f(s0[k]))} → ${fmtF(f(s1[k]))}</span></div>`).join('')}<div class="s">${sub}</div></div>`;
     $('#actionsSummary').innerHTML =
@@ -576,7 +576,7 @@
       <li class="action alt">
         <div>
           <h4>Tested and not recommended</h4>
-          <p class="why">Each lever below is applied on top of the three actions above. Satellites recovered are computed live, so they update if you change assumptions. Red means the lever leaves more satellites short, a greedy-ordering effect.</p>
+          <p class="why">Each lever below is applied on top of actions 02–04 above. Satellites recovered are computed live, so they update if you change assumptions. Red means the lever leaves more satellites short, a greedy-ordering effect.</p>
           <div class="table-wrap"><table><thead><tr><th>Lever</th><th>Owner</th><th>${sw('gp')}Sats recovered</th><th>${sw('g')}Sats recovered</th><th>${sw('gp')}Gap hrs</th><th style="text-align:left">Why not</th></tr></thead><tbody>
           ${ALTS.map((a, k) => { const x = recResults.alts[k]; return `<tr><td style="white-space:normal">${a.name}</td><td>${a.owner}</td><td class="${x.dShort.gp > 0 ? 'neg' : ''}">${fmtD(x.dShort.gp)}</td><td class="${x.dShort.g > 0 ? 'neg' : ''}">${fmtD(x.dShort.g)}</td><td>${x.dGap.gp <= 0 ? '−' : '+'}${fmt(Math.abs(x.dGap.gp))}</td><td style="text-align:left;white-space:normal;color:var(--muted)">${a.reason}</td></tr>`; }).join('')}
           </tbody></table></div>
@@ -755,7 +755,11 @@
       } else if (t.id === 'qSku') renderControls();
       else if (t.id === 'detailMonth' && selected) { selected.t = +t.value; renderHeatmap(); renderDetail(); }
     });
-    const live = (id, fn) => $(id).addEventListener('input', e => { fn(+e.target.value); update(); });
+    // Update the label while dragging; rerun the model (~30 engine runs) only on release
+    const live = (id, fn) => {
+      $(id).addEventListener('input', e => { fn(+e.target.value); renderControls(); });
+      $(id).addEventListener('change', update);
+    };
     live('#slip', v => { st.plannedSlip = v; });
     live('#launchScale', v => { st.launchScale = v / 100; });
     live('#yield', v => { st.yieldPct = v / 100; });
